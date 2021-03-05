@@ -6,13 +6,13 @@ let pt = (x, y) => ({
     point(this.x, this.y)
   },
   dist(opt) {
-    return ((this.x- opt.x)**2+(this.y - opt.y)**2)**.5
+    return ((this.x - opt.x) ** 2 + (this.y - opt.y) ** 2) ** .5
   }
 })
 
 let sq = (center, sqw, sqh) => ({
-  top: center.y + sqh / 2,
-  bottom: center.y - sqh / 2,
+  top: center.y - sqh / 2,
+  bottom: center.y + sqh / 2,
   left: center.x - sqw / 2,
   right: center.x + sqw / 2,
   center,
@@ -23,7 +23,7 @@ let sq = (center, sqw, sqh) => ({
   },
   contains(p) {
     //console.log("checking contains", p, p.x >= this.left, p.x <= this.right, p.y <= this.top, p.y >= this.bottom)
-    return p.x >= this.left && p.x <= this.right && p.y <= this.top && p.y >= this.bottom
+    return p.x >= this.left && p.x <= this.right && p.y >= this.top && p.y <= this.bottom
   }
 })
 // //
@@ -74,7 +74,7 @@ let QT = (center, qtw, qth, lim) => ({
   },
   draw() {
     //console.log(this)
-    strokeWeight(1)
+    strokeWeight(.3)
     this.square.draw()
     // if subdivided call draw on our children
     if (this.subdivided) {
@@ -85,7 +85,7 @@ let QT = (center, qtw, qth, lim) => ({
     } else {
       // draw each point
       //console.log("not subdivided")
-      strokeWeight(4)
+      strokeWeight(.5)
       for (let p of this.points) {
         p.draw()
       }
@@ -98,16 +98,19 @@ let QT = (center, qtw, qth, lim) => ({
   query(pele) {
     let result = []
     if (!this.square.contains(pele)) {
-      return []
+      return -1
     } else {
       if (this.subdivided) {
         for (let subqt of this.subqt) {
-          result = [...result,...subqt.query(pele)]
+          result = [...result, subqt.query(pele)]
         }
       } else {
-        result = this.points
+        return this
       }
     }
+
+    // perform final filter to keep only what we want
+    result = result.filter(e => e != -1)[0]
     return result
   }
   // has subdivided bool
@@ -133,7 +136,7 @@ function setup() {
     return
   }
   console.log("setup")
-  createCanvas(400, 400)
+  createCanvas(innerWidth, innerHeight)
   background("white")
   noFill()
   strokeWeight(1)
@@ -142,14 +145,14 @@ function setup() {
   // Array(40).fill(0).map(e=> qt.add(pt(random(width),random(height))))
   // use the points that are in the data
   // 
-  let scalex = d3.scaleLinear().range([0,width])
-  let scaley = d3.scaleLinear().range([height,0])
+  let scalex = d3.scaleLinear().range([0, width])
+  let scaley = d3.scaleLinear().range([height, 0])
   // 
-  let localdata = data.points.slice(40)
-  scalex.domain(d3.extent(localdata.map(e=> e.x)))
-  scaley.domain(d3.extent(localdata.map(e=> e.y)))
-  localdata.map(e=> {
-    qt.add(pt(scalex(e.x),scaley(e.y)))
+  let localdata = data.points
+  scalex.domain(d3.extent(localdata.map(e => e.x)))
+  scaley.domain(d3.extent(localdata.map(e => e.y)))
+  localdata.map(e => {
+    qt.add(pt(scalex(e.x), scaley(e.y)))
   })
   qt.draw()
 
@@ -159,8 +162,53 @@ function setup() {
   // line(test.x - 50,test.y,test.x + 50,test.y)
 }
 function mousePressed() {
-  console.log("clicked")
-  let neighbors = qt.query(pt(mouseX,mouseY))
-  stroke('red')
-  neighbors.map(e=> point(e.x,e.y))
+  // console.log("clicked")
+  // let neighbors = qt.query(pt(mouseX,mouseY))
+  // stroke('red')
+  // neighbors.map(e=> point(e.x,e.y))
+  // implement a thing where we compare the pixels in this section to all the pixels
+  let subqt = qt.query(pt(mouseX, mouseY))
+  // use the bounds of the subqt to iterate over pixels
+  // create a d3 color scaleLinear
+  let bounds = subqt.square
+  for (let p of subqt.points) {
+    stroke("red")
+    point(p.x, p.y)
+  }
+  rect(bounds.left, bounds.top, bounds.qtw,bounds.qth)
+  console.log(subqt)
+  let i = 0
+  let factor
+  // decide if the distance is greatest lengthwise or width wise
+  if (bounds.sqh > bounds.sqw) {
+    factor = 1/bounds.sqh
+  } else {
+    factor = 1 / bounds.sqw
+  }
+  console.log(factor)
+  for (let x = bounds.left; x < bounds.right; x++) {
+    for (let y = bounds.top; y < bounds.bottom; y++) {
+      i += 1
+      // test using timeout so it doesn't crash
+
+      setTimeout(() => {
+        let points = qt.query(pt(x, y)).points
+        //console.log(points)
+        //find min distance to a point in setup
+        let min = 10000
+        for (let p of points) {
+          let dist = p.dist(pt(x, y))
+          if (dist < min) {
+            min = dist
+          }
+        }
+        strokeWeight(1)
+
+        stroke(255 - min*factor*255)
+        point(x, y)
+      }, 1 * (i))
+
+    }
+  }
 }
+
