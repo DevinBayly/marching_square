@@ -155,36 +155,84 @@ function setup() {
     qt.add(pt(scalex(e.x), scaley(e.y)))
   })
   qt.draw()
-
+  // iterate over the tree, overloads the browser... colorize on all centers
+  // setTimeout(()=> {
+  // let i = 0
+  // // get flat rep of tree
+  // let flat = []
+  // let current = qt
+  // let lim = 20
+  // while (flat.length < lim) {
+  //   if (current.subdivided) {
+  //   flat = [...flat,...current.subqt]
+  //   }
+  //   i+= 1
+  //   current = flat[i]
+  // }
+  // console.log(flat)
+  // for (let flattree of flat) {
+  //   setTimeout(()=>{colorize(flattree.center.x,flattree.center.y)},10*random()*4)
+  // }
+  // },4000)
 
 
   // stroke("black")
   // line(test.x - 50,test.y,test.x + 50,test.y)
 }
+
 function mousePressed() {
+  colorize(mouseX,mouseY)
+}
+
+function colorize(ix,iy) {
   // console.log("clicked")
   // let neighbors = qt.query(pt(mouseX,mouseY))
   // stroke('red')
   // neighbors.map(e=> point(e.x,e.y))
   // implement a thing where we compare the pixels in this section to all the pixels
-  let subqt = qt.query(pt(mouseX, mouseY))
+  let subqt = qt.query(pt(ix, iy))
+  let bounds = subqt.square
+    let factor = 1/(width/2)
+
+  // if there's no points make it into a gradient with white at the center
+let i = 0
+  if (subqt.points.length == 0) {
+for (let x = bounds.left; x < bounds.right; x++) {
+    for (let y = bounds.top; y < bounds.bottom; y++) {
+      i += 1
+      // test using timeout so it doesn't crash
+
+      setTimeout(() => {
+        let mid = pt(bounds.right - bounds.sqw/2,bounds.bottom - bounds.sqh/2 )
+        let dst = mid.dist(pt(x,y))
+        strokeWeight(1)
+
+        stroke(255 - dst*factor*255)
+        point(x, y)
+      }, 1 * (i))
+
+    }
+  }
+  return
+  }
+  
   // use the bounds of the subqt to iterate over pixels
   // create a d3 color scaleLinear
-  let bounds = subqt.square
+  
   for (let p of subqt.points) {
     stroke("red")
     point(p.x, p.y)
   }
   rect(bounds.left, bounds.top, bounds.qtw,bounds.qth)
   console.log(subqt)
-  let i = 0
-  let factor
+  
   // decide if the distance is greatest lengthwise or width wise
-  if (bounds.sqh > bounds.sqw) {
-    factor = 1/bounds.sqh
-  } else {
-    factor = 1 / bounds.sqw
-  }
+  // probably should decide whether color is dependent on the boundary or not
+  // if (bounds.sqh > bounds.sqw) {
+  //   factor = 1/bounds.sqh
+  // } else {
+  //   factor = 1 / bounds.sqw
+  // }
   console.log(factor)
   for (let x = bounds.left; x < bounds.right; x++) {
     for (let y = bounds.top; y < bounds.bottom; y++) {
@@ -204,7 +252,7 @@ function mousePressed() {
         }
         strokeWeight(1)
 
-        stroke(255 - min*factor*255)
+        stroke(min*factor*255)
         point(x, y)
       }, 1 * (i))
 
