@@ -3,7 +3,7 @@ let canRun = false
 let pt = (x, y) => ({
   x, y,
   draw() {
-    point(this.x,this.y)
+    point(this.x, this.y)
   }
 })
 
@@ -19,13 +19,13 @@ let sq = (center, sqw, sqh) => ({
     rect(this.left, this.bottom, this.sqw, this.sqh)
   },
   contains(p) {
-    console.log("checking contains",p,p.x >= this.left , p.x <= this.right ,p.y <= this.top , p.y >= this.bottom)
+    console.log("checking contains", p, p.x >= this.left, p.x <= this.right, p.y <= this.top, p.y >= this.bottom)
     return p.x >= this.left && p.x <= this.right && p.y <= this.top && p.y >= this.bottom
   }
 })
 // //
-let QT = (center, qtw,qth, lim) => ({
-  square: sq(center, qtw,qth),
+let QT = (center, qtw, qth, lim) => ({
+  square: sq(center, qtw, qth),
   qtw,
   qth,
   subdivided: false,
@@ -34,7 +34,7 @@ let QT = (center, qtw,qth, lim) => ({
   center,
   lim,
   add(pele) {
-    console.log("adding",pele)
+    console.log("adding", pele)
     // check whether the point is within our sq
     if (this.subdivided) {
       // add it to one of the children
@@ -51,16 +51,16 @@ let QT = (center, qtw,qth, lim) => ({
       // subdivided
       // make subtrees
       // top left
-      let tl = QT( pt(this.center.x - this.qtw / 4, this.center.y - this.qth / 4),this.qtw / 2, this.qth / 2,this.lim)
-      let tr = QT(pt(this.center.x + this.qtw / 4, this.center.y - this.qth / 4),this.qtw / 2, this.qth / 2 ,this.lim)
-      let bl = QT( pt(this.center.x - this.qtw / 4, this.center.y + this.qth / 4),this.qtw / 2, this.qth / 2,this.lim)
-      let br = QT(pt(this.center.x + this.qtw / 4, this.center.y + this.qth / 4),this.qtw / 2, this.qth / 2, this.lim)
-      this.subqt = [ tl, tr, bl, br ]
+      let tl = QT(pt(this.center.x - this.qtw / 4, this.center.y - this.qth / 4), this.qtw / 2, this.qth / 2, this.lim)
+      let tr = QT(pt(this.center.x + this.qtw / 4, this.center.y - this.qth / 4), this.qtw / 2, this.qth / 2, this.lim)
+      let bl = QT(pt(this.center.x - this.qtw / 4, this.center.y + this.qth / 4), this.qtw / 2, this.qth / 2, this.lim)
+      let br = QT(pt(this.center.x + this.qtw / 4, this.center.y + this.qth / 4), this.qtw / 2, this.qth / 2, this.lim)
+      this.subqt = [tl, tr, bl, br]
       // for each point
-            // also add our current pele to someone
+      // also add our current pele to someone
 
-      for (let p of [...this.points,pele]) {
-        for(let subqt of this.subqt) {
+      for (let p of [...this.points, pele]) {
+        for (let subqt of this.subqt) {
           subqt.add(p)// will add it if it makes sense
         }
       }
@@ -75,7 +75,7 @@ let QT = (center, qtw,qth, lim) => ({
     // if subdivided call draw on our children
     if (this.subdivided) {
       console.log("is subdivided")
-      for( let subqt of this.subqt) {
+      for (let subqt of this.subqt) {
         subqt.draw()
       }
     } else {
@@ -85,13 +85,25 @@ let QT = (center, qtw,qth, lim) => ({
         p.draw()
       }
     }
-    
+
 
     // want to draw our boxes and the points 
 
   },
   query(pele) {
-
+    let result = []
+    if (!this.square.contains(pele)) {
+      return []
+    } else {
+      if (this.subdivided) {
+        for (let subqt of this.subqt) {
+          result = [...result,...subqt.query(pele)]
+        }
+      } else {
+        result = this.points
+      }
+    }
+    return result
   }
   // has subdivided bool
   // has subs which are also QTs
@@ -116,12 +128,12 @@ function setup() {
   //   return
   // }
   console.log("setup")
-  createCanvas(400  ,400)
+  createCanvas(400, 400)
   background("white")
   noFill()
   strokeWeight(4)
-  qt = QT(pt(width/2,height/2),width,height,4)
-  
+  qt = QT(pt(width / 2, height / 2), width, height, 4)
+
 
 
 
@@ -130,6 +142,6 @@ function setup() {
 }
 function mousePressed() {
   console.log("clicked")
-  qt.add(pt(mouseX,mouseY))
+  qt.add(pt(mouseX, mouseY))
   qt.draw()
 }
